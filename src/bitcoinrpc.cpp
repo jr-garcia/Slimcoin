@@ -39,6 +39,14 @@ typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> SSLStream;
 // a certain size around 145MB.  If we need access to json_spirit outside this
 // file, we could use the compiled json_spirit option.
 
+// Fix to compile with Boost 1.70+
+// https://stackoverflow.com/a/67773642
+#if BOOST_VERSION >= 107000
+#define GET_IO_SERVICE(s) ((boost::asio::io_context&)(s).get_executor().context())
+#else
+#define GET_IO_SERVICE(s) ((s).get_io_service())
+#endif
+
 using namespace std;
 using namespace boost;
 using namespace boost::asio;
@@ -4567,7 +4575,7 @@ public:
     }
     bool connect(const std::string& server, const std::string& port)
     {
-        ip::tcp::resolver resolver(stream.get_io_service());
+        ip::tcp::resolver resolver(GET_IO_SERVICE(stream));
         ip::tcp::resolver::query query(server.c_str(), port.c_str());
         ip::tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
         ip::tcp::resolver::iterator end;
